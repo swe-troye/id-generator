@@ -7,7 +7,7 @@ public class IdGeneratorImpl implements IdGenerator {
     @Override
     public long getId() {
 
-        return 0;
+        return 123;
     }
 
 }
