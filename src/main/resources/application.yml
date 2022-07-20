@@ -1,0 +1,6 @@
+id-generator:
+  datacenter-id: 1
+  time-bits: 40
+  datacenter-bits: 2
+  machine-bits: 9 # 9
+  sequence-bits: 12 # 12

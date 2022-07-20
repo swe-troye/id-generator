@@ -14,13 +14,17 @@ class IdGeneratorApplicationTests {
 	public void testSerialGenerate() {
 		// IdGenerator idGenerator = new IdGeneratorImpl();
 		// Generate UID
-		long id = idGenerator.getId();
+
+		long id;
+		for (int idx = 0; idx < 10000; idx++) {
+			id = idGenerator.getId();
+			System.out.println(String.valueOf(id));
+		}
 
 		// Parse UID into [Timestamp, WorkerId, Sequence]
 		// {"UID":"180363646902239241","parsed":{ "timestamp":"2017-01-19 12:15:46",
 		// "workerId":"4", "sequence":"9" }}
 		// System.out.println(idGenerator.parseID(uid));
-		System.out.println(String.valueOf(id));
 
 	}
 
