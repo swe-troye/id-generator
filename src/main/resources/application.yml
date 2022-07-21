@@ -2,5 +2,6 @@ id-generator:
   datacenter-id: 1
   time-bits: 40
   datacenter-bits: 2
-  machine-bits: 9 # 9
-  sequence-bits: 12 # 12
+  machine-bits: 9
+  sequence-bits: 12
+  start-timestamp-str: "2022-07-15 00:00:00"

@@ -16,7 +16,7 @@ class IdGeneratorApplicationTests {
 		// Generate UID
 
 		long id;
-		for (int idx = 0; idx < 10000; idx++) {
+		for (int idx = 0; idx < 5; idx++) {
 			id = idGenerator.getId();
 			System.out.println(String.valueOf(id));
 		}

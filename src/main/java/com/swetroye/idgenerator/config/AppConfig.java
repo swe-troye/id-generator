@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.swetroye.idgenerator.IdGenerator;
 import com.swetroye.idgenerator.impl.IdGeneratorImpl;
 
 @Configuration
@@ -25,6 +24,9 @@ public class AppConfig {
     @Value("${id-generator.sequence-bits}")
     private int sequenceBits;
 
+    @Value("${id-generator.start-timestamp-str}")
+    private String startTimestampStr;
+
     @Bean
     public IdGeneratorImpl idGeneratorImpl() {
         // System.out.println("------AppConfig--Creating IdGeneratorImpl object------");
@@ -33,13 +35,14 @@ public class AppConfig {
         // System.out.println("------Datacenter Bits--" + datacenterBits + "------");
         // System.out.println("------Machine Bits--" + machineBits + "------");
         // System.out.println("------Sequence Bits--" + sequenceBits + "------");
+        System.out.println("------Start Timestamp String--" + startTimestampStr + "------");
         IdGeneratorImpl idGeneratorImpl = new IdGeneratorImpl();
         idGeneratorImpl.setDatacenterId(datacenterId);
         idGeneratorImpl.setTimeBits(timeBits);
         idGeneratorImpl.setDatacenterBits(datacenterBits);
         idGeneratorImpl.setMachineBits(machineBits);
         idGeneratorImpl.setSequenceBits(sequenceBits);
-
+        idGeneratorImpl.setStartTimestampStr(startTimestampStr);
         return idGeneratorImpl;
     }
 }

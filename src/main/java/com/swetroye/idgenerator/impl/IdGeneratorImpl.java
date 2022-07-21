@@ -1,9 +1,10 @@
 package com.swetroye.idgenerator.impl;
 
-import java.util.concurrent.TimeUnit;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.util.StringUtils;
 
 import com.swetroye.idgenerator.IdGenerator;
 
@@ -118,6 +119,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
                 | sequence;
     }
 
+    // for testing purpose
     private void logForTesting() {
         long timeDelta = getCurrentTime() - startTimestamp;
         timeDelta = timeDelta << timeShift;
@@ -211,10 +213,30 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
     }
 
     public void setStartTimestampStr(String startTimestampStr) {
-        if (StringUtils.isNotBlank(startTimestampStr)) {
+
+        if (!startTimestampStr.isBlank()) {
             this.startTimestampStr = startTimestampStr;
-            this.startTimestamp = TimeUnit.MILLISECONDS
-                    .toSeconds(DateUtils.parseByDayPattern(startTimestampStr).getTime());
+
+            try {
+                Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(startTimestampStr);
+                // Unit is 10 millisecond, so it needed to be divided by 10.
+                this.startTimestamp = date.getTime() / 10;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
         }
+    }
+
+    public String getStartTimestampStr() {
+        return startTimestampStr;
+    }
+
+    public void setStartTimestamp(Long startTimestamp) {
+        this.startTimestamp = startTimestamp;
+    }
+
+    public Long getStartTimestamp() {
+        return this.startTimestamp;
     }
 }
