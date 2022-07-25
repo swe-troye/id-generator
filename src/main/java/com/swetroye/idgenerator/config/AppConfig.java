@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.swetroye.idgenerator.impl.IdGeneratorImpl;
+import com.swetroye.idgenerator.impl.WorkerManagerImpl;
 
 @Configuration
 public class AppConfig {
@@ -18,8 +19,8 @@ public class AppConfig {
     @Value("${id-generator.datacenter-bits}")
     private int datacenterBits;
 
-    @Value("${id-generator.machine-bits}")
-    private int machineBits;
+    @Value("${id-generator.worker-bits}")
+    private int workerBits;
 
     @Value("${id-generator.sequence-bits}")
     private int sequenceBits;
@@ -33,16 +34,27 @@ public class AppConfig {
         // System.out.println("------Datacenter Id--" + datacenterId + "------");
         // System.out.println("------Time Bits--" + timeBits + "------");
         // System.out.println("------Datacenter Bits--" + datacenterBits + "------");
-        // System.out.println("------Machine Bits--" + machineBits + "------");
+        // System.out.println("------Worker Bits--" + workerBits + "------");
         // System.out.println("------Sequence Bits--" + sequenceBits + "------");
-        System.out.println("------Start Timestamp String--" + startTimestampStr + "------");
+        // System.out.println("------Start Timestamp String--" + startTimestampStr +
+        // "------");
         IdGeneratorImpl idGeneratorImpl = new IdGeneratorImpl();
         idGeneratorImpl.setDatacenterId(datacenterId);
         idGeneratorImpl.setTimeBits(timeBits);
         idGeneratorImpl.setDatacenterBits(datacenterBits);
-        idGeneratorImpl.setMachineBits(machineBits);
+        idGeneratorImpl.setWorkerBits(workerBits);
         idGeneratorImpl.setSequenceBits(sequenceBits);
         idGeneratorImpl.setStartTimestampStr(startTimestampStr);
         return idGeneratorImpl;
+    }
+
+    @Value("${worker-manager.timeout}")
+    private long timeout;
+
+    @Bean
+    public WorkerManagerImpl workerManagerImpl() {
+        WorkerManagerImpl workerManagerImpl = new WorkerManagerImpl();
+        workerManagerImpl.setTimeout(timeout);
+        return workerManagerImpl;
     }
 }

@@ -5,8 +5,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.swetroye.idgenerator.IdGenerator;
+import com.swetroye.idgenerator.WorkerManager;
 
 public class IdGeneratorImpl implements IdGenerator, InitializingBean {
 
@@ -16,9 +18,8 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
      */
     private int signBits = 1;
     private int timeBits = 40;
-    // workerBits = datacenterBits + machineBits
     private int datacenterBits = 2;
-    private int machineBits = 9;
+    private int workerBits = 9;
     private int sequenceBits = 12;
 
     /**
@@ -31,28 +32,31 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
     /** Max value */
     private long maxTimeDelta = ~(-1L << timeBits);
     private long maxDatacenterId = ~(-1L << datacenterBits);
-    private long maxMachineId = ~(-1L << machineBits);
+    private long maxWorkerId = ~(-1L << workerBits);
     private long maxSequence = ~(-1L << sequenceBits);
 
     /** Shift bits */
-    private int timeShift = datacenterBits + machineBits + sequenceBits;
-    private int datacenterShift = machineBits + sequenceBits;
-    private int machineShift = sequenceBits;
+    private int timeShift = datacenterBits + workerBits + sequenceBits;
+    private int datacenterShift = workerBits + sequenceBits;
+    private int workerShift = sequenceBits;
 
     /** Parts of id */
     private long datacenterId;
-    private long machineId;
+    private long workerId;
     private long sequence = 0;
 
     /** Others */
     private long lastTimestamp = -1L;
     private final static long MAX_ID_LENGTH = 64;
 
+    @Autowired
+    WorkerManager workerManager;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         // Check & Allocate bits. Then set max & shift.
         // Chech bits
-        int totalBits = signBits + timeBits + datacenterBits + machineBits + sequenceBits;
+        int totalBits = signBits + timeBits + datacenterBits + workerBits + sequenceBits;
         if (totalBits != MAX_ID_LENGTH) {
             throw new RuntimeException(
                     "Bit allocation error. Total bits " + totalBits + " is not equal to " + MAX_ID_LENGTH);
@@ -61,26 +65,24 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
         // Max value
         maxTimeDelta = ~(-1L << timeBits);
         maxDatacenterId = ~(-1L << datacenterBits);
-        maxMachineId = ~(-1L << machineBits);
+        maxWorkerId = ~(-1L << workerBits);
         maxSequence = ~(-1L << sequenceBits);
 
         // Shift bits
-        timeShift = datacenterBits + machineBits + sequenceBits;
-        datacenterShift = machineBits + sequenceBits;
-        machineShift = sequenceBits;
+        timeShift = datacenterBits + workerBits + sequenceBits;
+        datacenterShift = workerBits + sequenceBits;
+        workerShift = sequenceBits;
 
         /** Check datacenter id */
         if (datacenterId > maxDatacenterId) {
             throw new RuntimeException("Datacenter id " + datacenterId + " exceeds the max " + maxDatacenterId);
         }
 
-        /** Set machine id & check */
-        // machineId = xxx.getMachineId()
-        // **********Tmp fake data - Start**********
-        machineId = 1L;
-        // **********Tmp fake data - End**********
-        if (machineId > maxMachineId) {
-            throw new RuntimeException("Machine id " + machineId + " exceeds the max " + maxMachineId);
+        /** Set Worker id & check */
+        workerId = workerManager.getWorkerId();
+
+        if (workerId > maxWorkerId) {
+            throw new RuntimeException("Worker id " + workerId + " exceeds the max " + maxWorkerId);
         }
 
     }
@@ -115,7 +117,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
 
         return (currentTimestamp - startTimestamp) << timeShift
                 | datacenterId << datacenterShift
-                | machineId << machineShift
+                | workerId << workerShift
                 | sequence;
     }
 
@@ -124,29 +126,29 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
         long timeDelta = getCurrentTime() - startTimestamp;
         timeDelta = timeDelta << timeShift;
         datacenterId = 2L << datacenterShift;
-        machineId = 1L << machineShift;
+        workerId = 1L << workerShift;
         sequence = 50L;
         System.out.println("Start time: " + startTimestamp);
         System.out.println("Current time: " + getCurrentTime());
         System.out.println("Time Delta: " + (getCurrentTime() - startTimestamp));
         System.out.println("Max time delta: " + maxTimeDelta);
         System.out.println("Max datacenter id: " + maxDatacenterId);
-        System.out.println("Max machine id: " + maxMachineId);
+        System.out.println("Max worker id: " + maxWorkerId);
         System.out.println("Max sequence: " + maxSequence);
         System.out.println("Time shift: " + timeShift);
         System.out.println("Datacenter shift: " + datacenterShift);
-        System.out.println("Machine shift: " + machineShift);
+        System.out.println("Worker shift: " + workerShift);
         System.out.println("-------------------------");
         System.out.println("Time Delta: " + timeDelta);
         System.out.println("Datacenter Id: " + datacenterId);
-        System.out.println("Machine Id: " + machineId);
+        System.out.println("Worker Id: " + workerId);
         System.out.println("Sequence: " + sequence);
 
         System.out.println(Long.toBinaryString(timeDelta));
         System.out.println(Long.toBinaryString(datacenterId));
-        System.out.println(Long.toBinaryString(machineId));
+        System.out.println(Long.toBinaryString(workerId));
         System.out.println(Long.toBinaryString(sequence));
-        long id = timeDelta | datacenterId | machineId | sequence;
+        long id = timeDelta | datacenterId | workerId | sequence;
         System.out.println(id);
         System.out.println(Long.toBinaryString(id));
     }
@@ -171,7 +173,9 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
         return timestamp;
     }
 
-    /** Getters & Setters */
+    /**
+     * Getters & Setters
+     */
     public int getTimeBits() {
         return timeBits;
     }
@@ -188,12 +192,12 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
         this.datacenterBits = datacenterBits;
     }
 
-    public int getMachineBits() {
-        return machineBits;
+    public int getWorkerBits() {
+        return workerBits;
     }
 
-    public void setMachineBits(int machineBits) {
-        this.machineBits = machineBits;
+    public void setWorkerBits(int workerBits) {
+        this.workerBits = workerBits;
     }
 
     public int getSequenceBits() {
