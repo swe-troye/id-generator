@@ -1,9 +1,9 @@
 tasks:
   - init: ./gradlew build
   - name: Install JDK
-    # before:
     # yes command is for answering 'setting this java version as default'
-    init: yes | sdk install java 17.0.3-ms
+    before: yes | sdk install java 17.0.3-ms
+    # init: 
     # command:
 vscode:
   extensions:
