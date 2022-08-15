@@ -1,0 +1,17 @@
+tasks:
+  - init: ./gradlew build
+  - name: Install JDK
+    # yes command is for answering 'setting this java version as default'
+    before: yes | sdk install java 17.0.3-ms
+    # init:
+    # command:
+vscode:
+  extensions:
+    # java
+    - redhat.java
+    - vscjava.vscode-java-pack
+    - vscjava.vscode-java-debug
+    # spring
+    - vscjava.vscode-spring-initializr
+    - Pivotal.vscode-spring-boot
+    - vscjava.vscode-spring-boot-dashboard
