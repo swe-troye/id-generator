@@ -3,6 +3,8 @@ plugins {
 	id 'org.springframework.boot' version '2.7.1' apply false
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 	id 'java'
+	// add this for using JitPack
+	id 'maven-publish'
 }
 
 group = 'com.swetroye'
@@ -24,6 +26,24 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// add this for using JitPack
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
 }
 
 tasks.named('test') {
