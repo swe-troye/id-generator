@@ -1,10 +1,12 @@
+image:
+  file: .gitpod.Dockerfile
 tasks:
-  - init: ./gradlew build
-  - name: Install JDK
-    # yes command is for answering 'setting this java version as default'
-    before: yes | sdk install java 17.0.3-ms
-    # init:
-    # command:
+  - init: ./gradlew build -x test
+  # - name: Install JDK
+  #   # yes command is for answering 'setting this java version as default'
+  #   before: yes | sdk install java 17.0.3-ms
+  #   # init:
+  #   # command:
 vscode:
   extensions:
     # java
