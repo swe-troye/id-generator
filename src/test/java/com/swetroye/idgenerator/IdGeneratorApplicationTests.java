@@ -17,20 +17,20 @@ class IdGeneratorApplicationTests {
 
 		long id;
 		for (int idx = 0; idx < 90; idx++) {
+		while (true) {
 			id = idGenerator.getId();
-			System.out.println(String.valueOf(id));
+
+			// Parse Id into [Timestamp, DatacenterId, WorkerId, Sequence]
+			// {"Id":"2784076689838080","timestamp":"2022/08/22
+			// 09:54:38.040","datacenterId":"1","workerId":"1","sequence":"0"}
+			System.out.println(idGenerator.parseId(id));
+
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(5);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-
-		// Parse UID into [Timestamp, WorkerId, Sequence]
-		// {"UID":"180363646902239241","parsed":{ "timestamp":"2017-01-19 12:15:46",
-		// "workerId":"4", "sequence":"9" }}
-		// System.out.println(idGenerator.parseID(uid));
-
 	}
 
 }

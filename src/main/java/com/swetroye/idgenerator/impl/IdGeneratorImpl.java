@@ -3,6 +3,8 @@ package com.swetroye.idgenerator.impl;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
     private int datacenterBits = 2;
     private int workerBits = 9;
     private int sequenceBits = 12;
+    private int totalBits = signBits + timeBits + datacenterBits + workerBits + sequenceBits;
 
     /**
      * Start timestamp, unit as 10 millisecond. For example 2022-07-15 00:00:00 (ms:
@@ -47,7 +50,10 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
 
     /** Others */
     private long lastTimestamp = -1L;
+    private long currentTimestamp;
     private final static long MAX_ID_LENGTH = 64;
+    private ThreadPoolExecutor threadPoolExecutor = null;
+    private boolean isClockDrift = false;
 
     @Autowired
     WorkerManager workerManager;
@@ -56,7 +62,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
     public void afterPropertiesSet() throws Exception {
         // Check & Allocate bits. Then set max & shift.
         // Chech bits
-        int totalBits = signBits + timeBits + datacenterBits + workerBits + sequenceBits;
+        totalBits = signBits + timeBits + datacenterBits + workerBits + sequenceBits;
         if (totalBits != MAX_ID_LENGTH) {
             throw new RuntimeException(
                     "Bit allocation error. Total bits " + totalBits + " is not equal to " + MAX_ID_LENGTH);
@@ -87,15 +93,41 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
 
     }
 
-
     @Override
     public long getId() {
-        long currentTimestamp = getCurrentTime();
+        long tmpCurrentTimestamp = getCurrentTime();
 
         // Clock drift problem. Needed to be handled by using the timestamp gradually
         // increasing method.
-        if (currentTimestamp < lastTimestamp) {
-            // undone
+        if (tmpCurrentTimestamp < lastTimestamp) {
+
+            // initial thread when there's no thread handling clock drift problem
+            if (threadPoolExecutor == null || (threadPoolExecutor != null && threadPoolExecutor.isShutdown())) {
+
+                isClockDrift = true;
+                threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+                threadPoolExecutor.execute(() -> {
+                    while (true) {
+                        try {
+                            Thread.sleep(20);
+                            currentTimestamp += 1;
+
+                            // clock drift problem solved -> leave the thread
+                            if (!isClockDrift) {
+                                threadPoolExecutor.shutdown();
+                                threadPoolExecutor = null;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                });
+            }
+        } else { // normal case
+            isClockDrift = false;
+            currentTimestamp = tmpCurrentTimestamp;
         }
 
         // in the same time interval
@@ -104,22 +136,39 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
 
             // Reach the max sequence in the same time interval
             if (sequence > maxSequence) {
-                // System.out
-                // .println("Reach the max sequence in the same time interval. " + sequence + "
-                // > " + maxSequence);
                 currentTimestamp = waitForNextTimestamp();
             }
         } else { // in the next time interval
             sequence = 0L; // reset sequence
 
             lastTimestamp = currentTimestamp;
-            // System.out.println("next time interval");
         }
 
         return (currentTimestamp - startTimestamp) << timeShift
                 | datacenterId << datacenterShift
                 | workerId << workerShift
                 | sequence;
+    }
+
+    @Override
+    public String parseId(long id) {
+
+        // parse Id
+        long sequence = (id << (totalBits - sequenceBits)) >>> (totalBits - sequenceBits);
+        long workerId = (id << (totalBits - sequenceBits - workerBits)) >>> (totalBits - workerBits);
+        long datacenterId = (id << (totalBits - sequenceBits - workerBits - datacenterBits)) >>> (totalBits
+                - datacenterBits);
+        long deltaTimestamp = id >>> (datacenterBits + workerBits + sequenceBits);
+
+        // multiply 10 -> change unit from 10ms to 1ms
+        Date date = new Date((startTimestamp + deltaTimestamp) * 10);
+        SimpleDateFormat sdFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+        String dateStr = sdFormat.format(date);
+
+        // format as string
+        return String.format(
+                "{\"Id\":\"%d\",\"timestamp\":\"%s\",\"datacenterId\":\"%d\",\"workerId\":\"%d\",\"sequence\":\"%d\"}",
+                id, dateStr, datacenterId, workerId, sequence);
     }
 
     // for testing purpose
