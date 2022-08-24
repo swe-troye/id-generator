@@ -1,12 +1,16 @@
 package com.swetroye.idgenerator.impl;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scripting.support.ResourceScriptSource;
 
 import com.swetroye.idgenerator.WorkerManager;
 import com.swetroye.idgenerator.entities.Worker;
@@ -27,33 +31,24 @@ public class WorkerManagerImpl implements WorkerManager {
     public long getWorkerId(long datacenterId, long maxWorkerId) {
 
         worker = buildWorker();
-
-        // **********Needed to be change to Lua Script**********
+        
         worker.setDataCenterId(datacenterId);
         worker.setId(0);
 
-        // Get keys. Pattern -> workers:[workerId]
-        Set<String> keySet = stringRedisTemplate.keys("workers:*");
-        // keySet.forEach(x -> System.out.println("-----Matched key-----" + x));
-
-        // Find next available worker id
-        if (keySet.size() != 0) {
-            for (long idx = 0; idx < maxWorkerId - 1; idx++) {
-                if (!keySet.contains("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(idx))) {
-                    worker.setId(idx);
-                    break;
-                }
-            }
-        }
-
-        // Set value & TTL of this worker
-        // Unit of TTL is second
-        // Because Redis' basic data type is String, we need to convert workerId from
-        // Long to String.
-        stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(worker.getId()),
-                worker.getPodUid(), timeout, TimeUnit.SECONDS);
-        System.out.println("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(worker.getId()));
-
+        // ----- Use lua script to ensure the atomicity of the redis operations -----
+        DefaultRedisScript<List> redisScript = new DefaultRedisScript<>();
+        // Set script
+        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/GetWorkerId.lua")));
+        // Set return type
+        redisScript.setResultType(List.class);
+        
+        String keyPattern = "workers:*";
+        // param 1: redisScript, param 2: key list, param 3-n: arg (multiple)
+        var result = stringRedisTemplate.execute(redisScript, Collections.singletonList(keyPattern), String.valueOf(datacenterId), String.valueOf(maxWorkerId), worker.getPodUid(), String.valueOf(timeout));
+        long workerId = (long) result.get(0);
+        
+        worker.setId(workerId);
+        
         // Start heartbeat to db
         startHeartbeat();
 
@@ -85,7 +80,6 @@ public class WorkerManagerImpl implements WorkerManager {
             while (true) {
                 stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(worker.getDataCenterId()) + ":" + String.valueOf(worker.getId()),
                         worker.getPodUid(), timeout, TimeUnit.SECONDS);
-                        System.out.println("heartbeat workers:" + String.valueOf(worker.getDataCenterId()) + ":" + String.valueOf(worker.getId()));
                 try {
                     Thread.sleep(heartbeatRate * 1000);
                 } catch (InterruptedException e) {
