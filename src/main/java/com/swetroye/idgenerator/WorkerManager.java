@@ -6,6 +6,6 @@ public interface WorkerManager {
      * 
      * @return an assigned worker id
      */
-    public long getWorkerId();
+    public long getWorkerId(long datacenterId, long maxWorkerId);
     
 }

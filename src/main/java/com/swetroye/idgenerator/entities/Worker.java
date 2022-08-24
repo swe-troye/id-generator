@@ -9,6 +9,11 @@ public class Worker {
     private long id;
 
     /**
+     * Data center id
+     */
+    private long dataCenterId;
+
+    /**
      * Container -> Pod Uid; Actual -> IP:Timestamp + random num
      */
     private String podUid;
@@ -27,6 +32,14 @@ public class Worker {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
+
+    public void setDataCenterId(long dataCenterId) {
+        this.dataCenterId = dataCenterId;
     }
 
     public String getPodUid() {

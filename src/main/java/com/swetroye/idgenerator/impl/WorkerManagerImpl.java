@@ -24,11 +24,12 @@ public class WorkerManagerImpl implements WorkerManager {
     private long heartbeatRate;
 
     @Override
-    public long getWorkerId() {
+    public long getWorkerId(long datacenterId, long maxWorkerId) {
 
         worker = buildWorker();
 
         // **********Needed to be change to Lua Script**********
+        worker.setDataCenterId(datacenterId);
         worker.setId(0);
 
         // Get keys. Pattern -> workers:[workerId]
@@ -37,8 +38,8 @@ public class WorkerManagerImpl implements WorkerManager {
 
         // Find next available worker id
         if (keySet.size() != 0) {
-            for (long idx = 0; idx < Long.MAX_VALUE; idx++) {
-                if (!keySet.contains("workers:" + String.valueOf(idx))) {
+            for (long idx = 0; idx < maxWorkerId - 1; idx++) {
+                if (!keySet.contains("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(idx))) {
                     worker.setId(idx);
                     break;
                 }
@@ -49,8 +50,12 @@ public class WorkerManagerImpl implements WorkerManager {
         // Unit of TTL is second
         // Because Redis' basic data type is String, we need to convert workerId from
         // Long to String.
-        stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(worker.getId()),
+        stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(worker.getId()),
                 worker.getPodUid(), timeout, TimeUnit.SECONDS);
+        System.out.println("workers:" + String.valueOf(datacenterId) + ":" + String.valueOf(worker.getId()));
+
+        // Start heartbeat to db
+        startHeartbeat();
 
         return worker.getId();
     }
@@ -70,9 +75,6 @@ public class WorkerManagerImpl implements WorkerManager {
                     + (int) (Math.random() * 10000));
         }
 
-        // Start heartbeat to db
-        startHeartbeat();
-
         return worker;
     }
 
@@ -81,9 +83,9 @@ public class WorkerManagerImpl implements WorkerManager {
 
         threadPoolExecutor.execute(() -> {
             while (true) {
-                stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(worker.getId()),
+                stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(worker.getDataCenterId()) + ":" + String.valueOf(worker.getId()),
                         worker.getPodUid(), timeout, TimeUnit.SECONDS);
-
+                        System.out.println("heartbeat workers:" + String.valueOf(worker.getDataCenterId()) + ":" + String.valueOf(worker.getId()));
                 try {
                     Thread.sleep(heartbeatRate * 1000);
                 } catch (InterruptedException e) {

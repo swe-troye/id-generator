@@ -16,7 +16,7 @@ class IdGeneratorApplicationTests {
 		// Generate UID
 
 		long id;
-		for (int idx = 0; idx < 90; idx++) {
+		for (int idx = 0; idx < 1; idx++) {
 			id = idGenerator.getId();
 
 			// Parse Id into [Timestamp, DatacenterId, WorkerId, Sequence]

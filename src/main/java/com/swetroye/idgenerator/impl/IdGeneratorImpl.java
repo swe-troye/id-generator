@@ -85,7 +85,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
         }
 
         /** Set Worker id & check */
-        workerId = workerManager.getWorkerId();
+        workerId = workerManager.getWorkerId(datacenterId, maxWorkerId);
 
         if (workerId > maxWorkerId) {
             throw new RuntimeException("Worker id " + workerId + " exceeds the max " + maxWorkerId);
