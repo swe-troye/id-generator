@@ -57,4 +57,8 @@ public class Worker {
     public void setType(int type) {
         this.type = type;
     }
+
+    public String getFullId() {
+        return "workers:" + String.valueOf(dataCenterId) + ":" + String.valueOf(id);
+    }
 }

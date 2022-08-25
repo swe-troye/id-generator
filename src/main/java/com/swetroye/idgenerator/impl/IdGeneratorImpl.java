@@ -6,13 +6,14 @@ import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.swetroye.idgenerator.IdGenerator;
 import com.swetroye.idgenerator.WorkerManager;
 
-public class IdGeneratorImpl implements IdGenerator, InitializingBean {
+public class IdGeneratorImpl implements IdGenerator, InitializingBean, DisposableBean {
 
     /**
      * Bits allocation
@@ -91,6 +92,13 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
             throw new RuntimeException("Worker id " + workerId + " exceeds the max " + maxWorkerId);
         }
 
+    }
+
+    // This method will be triggered when the spring container is closed.
+    @Override
+    public void destroy() throws Exception
+    {
+        workerManager.terminateWorker();
     }
 
     @Override
@@ -293,4 +301,5 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean {
     public Long getStartTimestamp() {
         return this.startTimestamp;
     }
+
 }

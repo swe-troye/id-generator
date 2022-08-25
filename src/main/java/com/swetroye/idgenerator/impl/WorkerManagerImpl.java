@@ -78,7 +78,7 @@ public class WorkerManagerImpl implements WorkerManager {
 
         threadPoolExecutor.execute(() -> {
             while (true) {
-                stringRedisTemplate.opsForValue().set("workers:" + String.valueOf(worker.getDataCenterId()) + ":" + String.valueOf(worker.getId()),
+                stringRedisTemplate.opsForValue().set(worker.getFullId(),
                         worker.getPodUid(), timeout, TimeUnit.SECONDS);
                 try {
                     Thread.sleep(heartbeatRate * 1000);
@@ -88,6 +88,11 @@ public class WorkerManagerImpl implements WorkerManager {
             }
 
         });
+    }
+
+    @Override
+    public void terminateWorker() {
+        stringRedisTemplate.opsForValue().getAndDelete(worker.getFullId());
     }
 
     /**
