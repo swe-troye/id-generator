@@ -8,7 +8,7 @@ import com.swetroye.idgenerator.impl.IdGeneratorImpl;
 import com.swetroye.idgenerator.impl.WorkerManagerImpl;
 
 @Configuration
-public class AppConfig {
+public class IdGeneratorConfig {
 
     @Value("${id-generator.datacenter-id}")
     private long datacenterId;
