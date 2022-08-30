@@ -27,7 +27,7 @@ public class DockerUtils {
 
     private static void initInfo() {
         // Get pod Uid from enviroment
-        String podUid = System.getenv("POD_UID");
+        podUid = System.getenv("POD_UID");
 
         if (podUid != null && !podUid.isBlank()) {
             isDocker = true;
