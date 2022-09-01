@@ -96,13 +96,13 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean, Disposabl
 
     // This method will be triggered when the spring container is closed.
     @Override
-    public void destroy() throws Exception
-    {
+    public void destroy() throws Exception {
         workerManager.terminateWorker();
     }
 
     @Override
     public long getId() {
+
         long tmpCurrentTimestamp = getCurrentTime();
 
         // Clock drift problem. Needed to be handled by using the timestamp gradually
@@ -140,11 +140,13 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean, Disposabl
 
         // in the same time interval
         if (currentTimestamp == lastTimestamp) {
-            sequence++;
+            // sequence add 1 & do 'AND' with max sequence
+            sequence = (sequence + 1) & maxSequence;
 
             // Reach the max sequence in the same time interval
-            if (sequence > maxSequence) {
+            if (sequence == 0) {
                 currentTimestamp = waitForNextTimestamp();
+                lastTimestamp = currentTimestamp;
             }
         } else { // in the next time interval
             sequence = 0L; // reset sequence
@@ -222,9 +224,8 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean, Disposabl
      * Wait until get the next timestamp
      */
     private long waitForNextTimestamp() {
-
         long timestamp = getCurrentTime();
-        while (getCurrentTime() <= lastTimestamp) {
+        while (timestamp <= lastTimestamp) {
             timestamp = getCurrentTime();
         }
 
