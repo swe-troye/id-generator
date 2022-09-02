@@ -101,7 +101,7 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean, Disposabl
     }
 
     @Override
-    public long getId() {
+    public synchronized long getId() {
 
         long tmpCurrentTimestamp = getCurrentTime();
 
