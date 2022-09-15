@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -18,6 +19,7 @@ import com.swetroye.idgenerator.enums.WorkerType;
 import com.swetroye.idgenerator.utils.DockerUtils;
 import com.swetroye.idgenerator.utils.NetUtils;
 
+@ConfigurationProperties(prefix = "worker-manager")
 public class WorkerManagerImpl implements WorkerManager {
 
     @Autowired
@@ -29,9 +31,8 @@ public class WorkerManagerImpl implements WorkerManager {
 
     @Override
     public long getWorkerId(long datacenterId, long maxWorkerId) {
-
         worker = buildWorker();
-        
+
         worker.setDataCenterId(datacenterId);
         worker.setId(0);
 
@@ -41,14 +42,15 @@ public class WorkerManagerImpl implements WorkerManager {
         redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/GetWorkerId.lua")));
         // Set return type
         redisScript.setResultType(List.class);
-        
+
         String keyPattern = "workers:*";
         // param 1: redisScript, param 2: key list, param 3-n: arg (multiple)
-        var result = stringRedisTemplate.execute(redisScript, Collections.singletonList(keyPattern), String.valueOf(datacenterId), String.valueOf(maxWorkerId), worker.getPodUid(), String.valueOf(timeout));
+        var result = stringRedisTemplate.execute(redisScript, Collections.singletonList(keyPattern),
+                String.valueOf(datacenterId), String.valueOf(maxWorkerId), worker.getPodUid(), String.valueOf(timeout));
         long workerId = (long) result.get(0);
-        
+
         worker.setId(workerId);
-        
+
         // Start heartbeat to db
         startHeartbeat();
 

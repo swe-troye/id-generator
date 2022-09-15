@@ -9,10 +9,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import com.swetroye.idgenerator.IdGenerator;
 import com.swetroye.idgenerator.WorkerManager;
 
+@ConfigurationProperties(prefix = "id-generator")
 public class IdGeneratorImpl implements IdGenerator, InitializingBean, DisposableBean {
 
     /**
@@ -102,7 +104,6 @@ public class IdGeneratorImpl implements IdGenerator, InitializingBean, Disposabl
 
     @Override
     public synchronized long getId() {
-
         long tmpCurrentTimestamp = getCurrentTime();
 
         // Clock drift problem. Needed to be handled by using the timestamp gradually
