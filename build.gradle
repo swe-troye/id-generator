@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'com.swetroye'
-version = '0.0.8-SNAPSHOT'
+version = '0.0.9-SNAPSHOT'
 sourceCompatibility = '17'
 
 repositories {
@@ -24,7 +24,7 @@ dependencyManagement {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive:2.7.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
@@ -48,4 +48,14 @@ publishing {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // Will include every single one of your dependencies, project or not
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it)}        
+    }
 }
